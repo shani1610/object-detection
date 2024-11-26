@@ -1,0 +1,5 @@
+# Ignore the virtual environment directory
+cvenv/
+
+# Ignore the processed_data/jeep folder
+processed_data/jeep/
