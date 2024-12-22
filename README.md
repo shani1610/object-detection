@@ -56,8 +56,8 @@ python VideoTools.py extract_frames "path/to/video.mp4" "path/to/output" --num_f
 ## Pipeline2
 
 1. **Extract Frames**
-2. **Keypoint Detection with SIFT:**
-3. **Feature Matching:**
+2. **Keypoint Detection with SIFT**
+3. **Feature Matching**
 4. **Cluster Outlier Points**
 5. **Bounding Box for the Main Cluster**
 6. **ROI Histogram Creation**
