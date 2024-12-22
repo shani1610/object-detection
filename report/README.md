@@ -134,17 +134,92 @@ Extracted individual frames from the input video (jeep.gif) and saved them as im
 
    - Detected keypoints in the first two frames (frame1 and frame2) using the SIFT algorithm.
    - Keypoints are distinctive points in the image, useful for tracking and alignment.
+     
 <img src="./assets/pipe2_sift.png" alt="drawing" width="200"/>
+
+```
+# Load two grayscale frames
+frame1 = cv2.imread(frame1_path, cv2.IMREAD_GRAYSCALE)
+frame2 = cv2.imread(frame2_path, cv2.IMREAD_GRAYSCALE)
+
+sift = cv2.SIFT_create()
+kp1, des1 = sift.detectAndCompute(frame1,None)
+kp2, des2 = sift.detectAndCompute(frame2,None)
+```
 
  3. **Feature Matching:**
 
    - Matched the detected keypoints between the two frames using Brute-Force Matcher (BFMatcher).
+```
+# BFMatcher with default params
+bf = cv2.BFMatcher()
+matches = bf.knnMatch(des1,des2,k=2)
+ 
+# Apply ratio test
+good_matches = []
+good_matches_sublist = []
+for m,n in matches:
+    if m.distance < 0.75*n.distance:
+        good_matches_sublist.append([m])
+        good_matches.append(m)
+
+# cv.drawMatchesKnn expects list of lists as matches.
+img3 = cv2.drawMatchesKnn(frame1,kp1,frame2,kp2,good_matches_sublist,None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+
+```
+
+* note: add explanation how brute force matcher is implemented.
+  
    - Applied a ratio test to filter matches, retaining only those where the closest match was significantly better than the second closest.
    - Homography Estimation with RANSAC
+     
+```
+ # Extract locations of matched keypoints
+src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2) 
+dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+
+# Use RANSAC to estimate the homography matrix and filter outliers
+H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0) # src for frame1 keypoints, dst for frame2 keypoints
+matches_mask = mask.ravel().tolist()
+
+# Draw inliers
+draw_params = dict(matchColor=(0, 255, 0),  # Green matches
+                   singlePointColor=None,
+                   matchesMask=matches_mask,  # Draw only inliers
+                   flags=cv2.DrawMatchesFlags_DEFAULT)
+
+img4 = cv2.drawMatches(frame1, kp1, frame2, kp2, good_matches, None, **draw_params)
+```
+
+```
+# Warp frame2 to align with frame1
+height, width = frame1.shape
+aligned_frame2 = cv2.warpPerspective(frame2, H, (width, height))
+```
 <img src="./assets/pipe2_aligned.png" alt="drawing" width="200"/>
 
-   - 
+
    - Extracted the matched keypoints into source (src_pts) and destination (dst_pts) arrays.
+
+```
+    # Extract inliers and outliers from RANSAC
+inliers = np.where(mask.ravel() == 1)[0]
+outliers = np.where(mask.ravel() == 0)[0]
+
+# Separate inlier and outlier points
+inlier_src_pts = src_pts[inliers] # src for frame1 keypoints, dst for frame2 keypoints
+inlier_dst_pts = dst_pts[inliers]
+
+outlier_src_pts = src_pts[outliers]
+outlier_dst_pts = dst_pts[outliers]
+
+# Visualize outliers (moving object points) on frame1
+frame1_outliers = frame1.copy()
+for pt in outlier_src_pts: # outlier_src_pts in frame1
+    x, y = int(pt[0][0]), int(pt[0][1])
+    cv2.circle(frame1_outliers, (x, y), 5, (255, 0, 0), -1)  # Red circles for outliers
+
+```
    - Used RANSAC to estimate a homography matrix that maps points in frame1 to frame2:
    - RANSAC robustly filtered outliers by iteratively fitting models to random subsets of points and choosing the best model.
    - Visualized the inliers and outliers on frame1 to verify the moving object regions.
@@ -158,7 +233,26 @@ Extracted individual frames from the input video (jeep.gif) and saved them as im
    - Clustered the outliers (likely belonging to the moving object) into two groups using K-Means:
    - Clustering was performed both with and without intensity as a feature.
    - Selected the largest cluster to focus on the main moving object.
-     
+```
+# clustering that doesn't includes the intensity, better for this
+z = []
+for pt in outlier_src_pts: # outlier_src_pts in frame1
+    x, y = int(pt[0][0]), int(pt[0][1]) # we can cluster based on spatial proximity.
+    z.append([x, y])
+
+# convert to np.float32
+Z = np.float32(z)
+# define criteria and apply kmeans()
+criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0) # when to stop, num of iterations, epsilon (the desired accuracy)
+ret,label,center=cv2.kmeans(Z,k,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
+# Now separate the data, Note the flatten()
+A = Z[label.ravel()==0]
+B = Z[label.ravel()==1]
+
+# lets track only the biggest cluster points
+# Identify the cluster with the most points
+object_cluster = A if A.shape[0] > B.shape[0] else B
+```
 <img src="./assets/pipe2_outliers_diag.png" alt="drawing" width="200"/>
 
 <img src="./assets/pipe2_outliers_diag_intensity.png" alt="drawing" width="200"/>
@@ -169,6 +263,23 @@ Extracted individual frames from the input video (jeep.gif) and saved them as im
    
    - Calculated the bounding box around the largest cluster of outlier points:
    - Used the mean and distances of the cluster points to filter stray points and tighten the bounding box.
+```
+# Find the bounding box for the selected cluster
+# Compute distances from the cluster centroid
+distances = np.linalg.norm(object_cluster - np.mean(object_cluster, axis=0), axis=1)
+threshold = np.percentile(distances, 90)  # Adjust this threshold as needed
+filtered_points = object_cluster[distances <= threshold]
+
+# Calculate the bounding box using filtered points
+x_min, y_min = np.min(filtered_points, axis=0)
+x_max, y_max = np.max(filtered_points, axis=0)
+bounding_box = (int(x_min), int(y_min), int(x_max - x_min), int(y_max - y_min))
+x, y, w, h = bounding_box
+print(f"Bounding box: x={x}, y={y}, w={w}, h={h}")
+if x < 0 or y < 0 or x+w > frame1.shape[1] or y+h > frame1.shape[0]:
+    print("Error: Bounding box is out of frame bounds")
+```
+
 <img src="./assets/pipe2_boundingbox.png" alt="drawing" width="200"/>
 
 7. **ROI Histogram Creation**
@@ -182,13 +293,60 @@ Extracted individual frames from the input video (jeep.gif) and saved them as im
 
 <img src="./assets/pipe2_roi_hsv_mask.png" alt="drawing" width="200"/>
 
+```
+# Set up the ROI for tracking
+# Visualize the ROI in the original frame
+roi = frame1[y:y+h, x:x+w]
+# Convert ROI to HSV
+frame1_bgr = cv2.imread(frame1_path)
+frame1_hsv = cv2.cvtColor(frame1_bgr, cv2.COLOR_BGR2HSV)
+roi_hsv = frame1_hsv[y:y+h, x:x+w]
+# Visualize the mask applied to the HSV ROI
+mask = cv2.inRange(roi_hsv, np.array((0., 50., 50.)), np.array((180., 255., 255.)))
+# Calculate and plot the ROI histogram
+roi_hist = cv2.calcHist([roi_hsv], [0], mask, [180], [0, 180])
+# Normalize the histogram and visualize
+cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+```
+
 7. **Tracking with MeanShift**
    - Used the histogram from the previous step to create a back-projection map for each frame:
    - Bright regions in the map correspond to areas similar to the object's histogram.
+   - 
+  <img src="./assets/pipe2_backprojection.gif" alt="drawing" width="200"/>
+  
+```
+# Setup the termination criteria for MeanShift
+term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
+
+# Iterate through all frames in sorted order# Process each frame
+for frame_path in frame_paths[1:]:
+    curr_frame = cv2.imread(frame_path)
+    hsv = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2HSV)
+    dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
+    cv2.imshow("Back-Projection", dst)
+    # Debug: Save dst to video
+    dst_colorized = cv2.applyColorMap(cv2.convertScaleAbs(dst, alpha=255.0/dst.max()), cv2.COLORMAP_JET)  # Optional for visualization
+    # Debug: Visualize and save the back-projection
+    cv2.imshow("Back-Projection", dst)
+    out_dst.write(dst)  # Write the grayscale back-projection directly
+
+    # Apply MeanShift
+    ret, track_window = cv2.meanShift(dst, track_window, term_crit)
+    print(f"Updated track_window: {track_window}")
+
+    # Draw the rectangle
+    x, y, w, h = track_window
+    tracked_frame = cv2.rectangle(curr_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    # Optional: Visualize the tracking result
+    # Write the frame to the output video
+    out.write(tracked_frame)
+```
+
    - Applied MeanShift tracking to locate the bounding box of the object in subsequent frames.
    - Saved both the tracking output and the back-projection map as videos for evaluation.
 
-<img src="./assets/pipe2_backprojection.gif" alt="drawing" width="200"/>
-
-
 <img src="./assets/pipe2_output.gif" alt="drawing" width="200"/>
+
+
