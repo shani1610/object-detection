@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from VideoTools import VideoTools
 
 
-show_graphs = False
+show_graphs = True
 
 # Paths
 data_folder = "data"
@@ -88,7 +88,7 @@ binary_mask_3 = ((difference < lower_threshold) | (difference > upper_threshold)
 
 if show_graphs:
     # Display the results
-    plt.figure(figsize=(20, 5))
+    plt.figure(figsize=(10, 20))
     plt.subplot(3, 3, 1), plt.title("Frame 1"), plt.imshow(frame1, cmap='gray')
     plt.subplot(3, 3, 2), plt.title("Frame 2"), plt.imshow(frame2, cmap='gray')
     plt.subplot(3, 3, 3), plt.title("Differance with no processing"), plt.imshow(difference, cmap='gray')
@@ -107,7 +107,7 @@ dilation = cv2.dilate(binary_mask, kernel, iterations = 1)
 noise_removed = cv2.dilate(erosion, kernel, iterations = 1)
 
 if show_graphs:
-    plt.figure(figsize=(20, 5))
+    plt.figure(figsize=(10, 5))
     plt.subplot(2, 2, 1), plt.title("binary mask (2*std)"), plt.imshow(binary_mask, cmap='gray')
     plt.subplot(2, 2, 2), plt.title("erosion"), plt.imshow(erosion, cmap='gray')
     plt.subplot(2, 2, 3), plt.title("dilation"), plt.imshow(dilation, cmap='gray')
