@@ -2,7 +2,16 @@
 This project demonstrates a simple object tracking pipeline using classical computer vision techniques. Below is a concise outline of the pipeline:
 I did it for self study and expiriments.
 
-## Setting up the Python Environment
+# Table of Contents
+
+- [Setup](#setup)
+- [Pipelines](#pipelines)
+  - [Pipeline1](##pipeline1)
+  - [Pipeline2](##pipeline2)
+- [Details](#Details)
+
+  
+# Setup
 
 1. **Create a new virtual environment**  
    Run the following command to create a virtual environment named `videotools_env`:
@@ -30,7 +39,9 @@ run
 python VideoTools.py extract_frames "path/to/video.mp4" "path/to/output" --num_frames 50
 ```
 
-##  First Pipeline: 
+# Pipelines
+
+##  Pipeline1
 
 1. **Extract Frames**
 2. **Compute Frame Difference**
@@ -41,10 +52,9 @@ python VideoTools.py extract_frames "path/to/video.mp4" "path/to/output" --num_f
 7. **Track Features Across Frames**
 8. **Repeat for All Frames**
 
-# scripts\detect_jeep
-![Description](output\tracked_video.gif)
 
-## Second Pipeline:
+## Pipeline2
+
 1. **Extract Frames**
 2. **Keypoint Detection with SIFT:**
 3. **Feature Matching:**
@@ -53,4 +63,7 @@ python VideoTools.py extract_frames "path/to/video.mp4" "path/to/output" --num_f
 6. **ROI Histogram Creation**
 7. **Tracking with MeanShift**
 
+# Details 
+
+a detailed report can be found [here](https://github.com/shani1610/object-detection/blob/main/report/README.md)
 
