@@ -14,12 +14,12 @@ Calculate the difference between the first two frames to detect motion, pay atte
 lets look at the histogram of frame 1 and the histogram of the difference image. 
 
 <img src="./assets/pipe1_hist_frame1.png" alt="drawing" width="200"/>
-<img src="/assets/pipe1_hist_diff.png" alt="drawing" width="200"/>
+<img src="./assets/pipe1_hist_diff.png" alt="drawing" width="200"/>
 
 for the thresholding we need to use information we have from normal gaussian distribution. Generate a binary mask by thresholding the difference image.
 the 68–95–99.7 (empirical) rule says that 95% of the observations are within the range [-2*std, 2*std].
 
-<img src="/assets/pipe1_thresholding.png" alt="drawing" width="200"/>
+<img src="./assets/pipe1_thresholding.png" alt="drawing" width="200"/>
 image from wkipedia.
 
 we are leveraging this rule to remove the noise.
@@ -28,7 +28,7 @@ lower_threshold = mean - 2 * std
 upper_threshold = mean + 2 * std
 ```
 
-<img src="/assets/pipe1_std_thresh.png" alt="drawing" width="200"/>
+<img src="./assets/pipe1_std_thresh.png" alt="drawing" width="200"/>
 
 
 ### morphological Operation
@@ -38,7 +38,7 @@ for this will use morphological operation, it means
 we are doing convulotion of the binary image with a kernel.
 in the image from Szeliski Computer vision book (a) original image, (b) dilation , (c) erosion. 
 it is worth mentioning that while opening is useful for noise removal, closing is useful for closing smal holes inside foreground object. 
-<img src="/assets/pipe1_morphological.png" alt="drawing" width="200"/>
+<img src="./assets/pipe1_morphological.png" alt="drawing" width="200"/>
 
 the operation we need for this task is opening, meaning erosion followed by dilation.
 the erosion is a kernel that looks at the neighboring of the main pixel, if not all the pixels are 1 (white), than the erosion makes it black. this is the noise removal. 
@@ -58,18 +58,18 @@ noise_removed = cv2.dilate(erosion, kernel, iterations = 1)
 ```
 
 in the image we see the binary mask, the erosion result, the dilation result and the rsult of the closing.
-<img src="/assets/pipe1_closing.png" alt="drawing" width="200"/>
+<img src="./assets/pipe1_closing.png" alt="drawing" width="200"/>
 
 ### find the contours 
-<img src="/assets/pipe1_contours.png" alt="drawing" width="200"/>
+<img src="./assets/pipe1_contours.png" alt="drawing" width="200"/>
 
 
 ### detect features
 Use the Shi-Tomasi Corner Detector to find good features within the bounding box.
-<img src="/assets/pipe1_features.png" alt="drawing" width="200"/>
-<img src="/assets/pipe1_features_zoomin.png" alt="drawing" width="200"/>
-<img src="/assets/pipe1_features_next_frame.png" alt="drawing" width="200"/>
-<img src="/assets/pipe1_features_next_frame_zoomin" alt="drawing" width="200"/>
+<img src="./assets/pipe1_features.png" alt="drawing" width="200"/>
+<img src="./assets/pipe1_features_zoomin.png" alt="drawing" width="200"/>
+<img src="./assets/pipe1_features_next_frame.png" alt="drawing" width="200"/>
+<img src="./assets/pipe1_features_next_frame_zoomin" alt="drawing" width="200"/>
 
  
 ### track features
@@ -77,5 +77,5 @@ Use Lucas-Kanade Optical Flow to track the detected features in subsequent frame
 Filter only the successfully tracked points (`st == 1`).
 
 the ouput is:
-<img src="/assets/pipe1_output.gif" alt="drawing" width="200"/>
+<img src="./assets/pipe1_output.gif" alt="drawing" width="200"/>
 
