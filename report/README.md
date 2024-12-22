@@ -68,6 +68,17 @@ in the image we see the binary mask, the erosion result, the dilation result and
 
 <img src="./assets/pipe1_contours.png" alt="drawing" width="200"/>
 
+```
+contours, hierarchy = cv2.findContours(noise_removed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+print("Number of Contours found = " + str(len(contours))) 
+  
+# Draw all contours 
+# -1 signifies drawing all contours 
+cv2.drawContours(frame1_copy, contours, -1, (0, 255, 0), 3) 
+
+x,y,w,h = cv2.boundingRect(contours[0])
+cv2.rectangle(frame1_copy2,(x,y),(x+w,y+h),(0,255,0),2)
+```
 
 ### detect features
 
@@ -81,10 +92,34 @@ Use the Shi-Tomasi Corner Detector to find good features within the bounding box
 
 <img src="./assets/pipe1_features_next_frame_zoomin.png" alt="drawing" width="200"/>
 
+```
+# extract good features to track 
+# Crop the region of interest (ROI) from the grayscale image
+frame2_copy = frame2.copy()
+roi = frame2_copy[y:y + h, x:x + w]
+
+# Detect features in the ROI
+corners = cv2.goodFeaturesToTrack(roi, 25, 0.01, 10)
+
+if corners is not None:
+     # Add bounding box offsets
+    corners_global = corners + np.array([x, y], dtype=np.float32)
+    for i in corners_global:
+        # Adjust corner coordinates relative to the original image
+        cx, cy = i.ravel()
+        cx, cy = int(cx), int(cy)  # Add bounding box offsets
+        #print(f"corner: ({cx}, {cy})")
+        
+        # Draw the feature point on the original frame
+        cv2.circle(frame2_copy, (cx, cy), 3, (255, 0, 0), -1)
+else:
+    print("no corners have found")
+```
 
 ### track features
 Use Lucas-Kanade Optical Flow to track the detected features in subsequent frames.
 Filter only the successfully tracked points (`st == 1`).
+we first did on frame 2 and 3 and after successful results we itrerate over all the frames. 
 
 the ouput is:
 
