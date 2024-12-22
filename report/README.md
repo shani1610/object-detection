@@ -13,7 +13,7 @@ Calculate the difference between the first two frames to detect motion, pay atte
 
 lets look at the histogram of frame 1 and the histogram of the difference image. 
 
-<img src="/assets/pipe1_hist_frame1.png" alt="drawing" width="200"/>
+<img src="./assets/pipe1_hist_frame1.png" alt="drawing" width="200"/>
 <img src="/assets/pipe1_hist_diff.png" alt="drawing" width="200"/>
 
 for the thresholding we need to use information we have from normal gaussian distribution. Generate a binary mask by thresholding the difference image.
