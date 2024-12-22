@@ -122,12 +122,13 @@ if show_graphs:
     plt.subplot(1, 2, 2), plt.imshow(frame1_outliers, cmap='gray'), plt.title("Detected Outliers (Moving Object)")
     plt.show()
 
-plt.figure(figsize=(10, 5))
-plt.scatter([pt[0][0] for pt in outlier_src_pts], [pt[0][1] for pt in outlier_src_pts], color='blue')
-plt.title("Outlier Points Before Clustering")
-plt.xlabel("X Coordinate")
-plt.ylabel("Y Coordinate")
-plt.show()
+if show_graphs:
+    plt.figure(figsize=(10, 5))
+    plt.scatter([pt[0][0] for pt in outlier_src_pts], [pt[0][1] for pt in outlier_src_pts], color='blue')
+    plt.title("Outlier Points Before Clustering")
+    plt.xlabel("X Coordinate")
+    plt.ylabel("Y Coordinate")
+    plt.show()
 
 k = 2
 
@@ -146,13 +147,15 @@ ret,label,center=cv2.kmeans(Z,k,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
 # Now separate the data, Note the flatten()
 A = Z[label.ravel()==0]
 B = Z[label.ravel()==1]
-# Plot the data
-plt.scatter(A[:,0],A[:,1])
-plt.scatter(B[:,0],B[:,1],c = 'r')
-plt.scatter(center[:,0],center[:,1],s = 80,c = 'y', marker = 's')
-plt.title(f"K-Means Clustering, k = {k}, spatial proximity and intensity")
-plt.xlabel('Height'),plt.ylabel('Weight')
-plt.show()
+
+if show_graphs:
+    # Plot the data
+    plt.scatter(A[:,0],A[:,1])
+    plt.scatter(B[:,0],B[:,1],c = 'r')
+    plt.scatter(center[:,0],center[:,1],s = 80,c = 'y', marker = 's')
+    plt.title(f"K-Means Clustering, k = {k}, spatial proximity and intensity")
+    plt.xlabel('Height'),plt.ylabel('Weight')
+    plt.show()
 
 # clustering that doesn't includes the intensity, better for this
 z = []
@@ -168,13 +171,15 @@ ret,label,center=cv2.kmeans(Z,k,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
 # Now separate the data, Note the flatten()
 A = Z[label.ravel()==0]
 B = Z[label.ravel()==1]
-# Plot the data
-plt.scatter(A[:,0],A[:,1])
-plt.scatter(B[:,0],B[:,1],c = 'r')
-plt.scatter(center[:,0],center[:,1],s = 80,c = 'y', marker = 's')
-plt.xlabel('Height'),plt.ylabel('Weight')
-plt.title(f"K-Means Clustering, k = {k}, spatial proximity only")
-plt.show()
+
+if show_graphs:
+    # Plot the data
+    plt.scatter(A[:,0],A[:,1])
+    plt.scatter(B[:,0],B[:,1],c = 'r')
+    plt.scatter(center[:,0],center[:,1],s = 80,c = 'y', marker = 's')
+    plt.xlabel('Height'),plt.ylabel('Weight')
+    plt.title(f"K-Means Clustering, k = {k}, spatial proximity only")
+    plt.show()
 
 print("Cluster 0 points:", A)
 print("Cluster 1 points:", B)
@@ -200,9 +205,10 @@ if x < 0 or y < 0 or x+w > frame1.shape[1] or y+h > frame1.shape[0]:
     
 frame1_debug = frame1.copy()
 cv2.rectangle(frame1_debug, (x, y), (x + w, y + h), (255, 0, 0), 2)  # Draw bounding box
-plt.imshow(frame1_debug, cmap='gray')
-plt.title("Bounding Box on Frame 1")
-plt.show()
+if show_graphs:
+    plt.imshow(frame1_debug, cmap='gray')
+    plt.title("Bounding Box on Frame 1")
+    plt.show()
 
 # Update the initial location of the window for MeanShift
 track_window = (x, y, w, h)
@@ -210,47 +216,56 @@ track_window = (x, y, w, h)
 # Set up the ROI for tracking
 # Visualize the ROI in the original frame
 roi = frame1[y:y+h, x:x+w]
-plt.figure(figsize=(10, 5))
-plt.subplot(1, 3, 1)
-plt.imshow(roi, cmap='gray')
-plt.title("ROI (Grayscale)")
-plt.axis("off")
+
+if show_graphs:
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 3, 1)
+    plt.imshow(roi, cmap='gray')
+    plt.title("ROI (Grayscale)")
+    plt.axis("off")
 
 # Convert ROI to HSV
 frame1_bgr = cv2.imread(frame1_path)
 frame1_hsv = cv2.cvtColor(frame1_bgr, cv2.COLOR_BGR2HSV)
 roi_hsv = frame1_hsv[y:y+h, x:x+w]
-plt.subplot(1, 3, 2)
-plt.imshow(cv2.cvtColor(roi_hsv, cv2.COLOR_HSV2RGB))
-plt.title("ROI in HSV")
-plt.axis("off")
+
+if show_graphs:
+    plt.subplot(1, 3, 2)
+    plt.imshow(cv2.cvtColor(roi_hsv, cv2.COLOR_HSV2RGB))
+    plt.title("ROI in HSV")
+    plt.axis("off")
 
 # Visualize the mask applied to the HSV ROI
 mask = cv2.inRange(roi_hsv, np.array((0., 50., 50.)), np.array((180., 255., 255.)))
-plt.subplot(1, 3, 3)
-plt.imshow(mask, cmap='gray')
-plt.title("ROI Mask")
-plt.axis("off")
-plt.show()
+
+if show_graphs:
+    plt.subplot(1, 3, 3)
+    plt.imshow(mask, cmap='gray')
+    plt.title("ROI Mask")
+    plt.axis("off")
+    plt.show()
 
 # Calculate and plot the ROI histogram
 roi_hist = cv2.calcHist([roi_hsv], [0], mask, [180], [0, 180])
-plt.figure(figsize=(10, 5))
-plt.subplot(1, 2, 1)
-plt.plot(roi_hist, color='blue')
-plt.title("Raw ROI Histogram (Hue)")
-plt.xlabel("Hue Bin")
-plt.ylabel("Frequency")
+
+if show_graphs:
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(roi_hist, color='blue')
+    plt.title("Raw ROI Histogram (Hue)")
+    plt.xlabel("Hue Bin")
+    plt.ylabel("Frequency")
 
 # Normalize the histogram and visualize
 cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
-plt.subplot(1, 2, 2)
-plt.plot(roi_hist, color='green')
-plt.title("Normalized ROI Histogram")
-plt.xlabel("Hue Bin")
-plt.ylabel("Frequency")
-plt.show()
 
+if show_graphs:
+    plt.subplot(1, 2, 2)
+    plt.plot(roi_hist, color='green')
+    plt.title("Normalized ROI Histogram")
+    plt.xlabel("Hue Bin")
+    plt.ylabel("Frequency")
+    plt.show()
 
 # Setup the termination criteria for MeanShift
 term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
@@ -294,9 +309,10 @@ for frame_path in frame_paths[1:]:
     tracked_frame = cv2.rectangle(curr_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     # Optional: Visualize the tracking result
-    cv2.imshow("Tracking", tracked_frame)
-    if cv2.waitKey(30) & 0xFF == 27:  # Press Esc to exit early
-        break
+    if show_graphs:
+        cv2.imshow("Tracking", tracked_frame)
+        if cv2.waitKey(30) & 0xFF == 27:  # Press Esc to exit early
+            break
     # Write the frame to the output video
     out.write(tracked_frame)
 
@@ -305,3 +321,10 @@ out.release()
 out_dst.release()
 cv2.destroyAllWindows()
 print(f"Output video saved at {output_video_path}")
+
+# convert avi to gif
+video_tools = VideoTools()
+output_video_gif_path = os.path.join(processed_data_folder, "tracked_video_gif.gif")
+output_dst_gif_path = os.path.join(processed_data_folder, "dst_video_gif.gif")
+video_tools.avi2gif(output_video_path, output_video_gif_path)
+video_tools.avi2gif(output_dst_path, output_dst_gif_path)
