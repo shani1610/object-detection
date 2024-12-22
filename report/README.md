@@ -188,3 +188,7 @@ Extracted individual frames from the input video (jeep.gif) and saved them as im
    - Applied MeanShift tracking to locate the bounding box of the object in subsequent frames.
    - Saved both the tracking output and the back-projection map as videos for evaluation.
 
+<img src="./assets/pipe2_backprojection.gif" alt="drawing" width="200"/>
+
+
+<img src="./assets/pipe2_output.gif" alt="drawing" width="200"/>
