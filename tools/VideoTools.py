@@ -65,6 +65,26 @@ class VideoTools:
         clip.write_videofile(output_path, codec="libx264")
         print(f"Converted {source} to MP4 at {output_path}")
 
+    @staticmethod
+    def avi2gif(input_avi_path, output_gif_path, fps=10):
+        """
+        Converts an AVI video file to a GIF using MoviePy.
+
+        Parameters:
+            input_avi_path (str): Path to the input AVI file.
+            output_gif_path (str): Path where the output GIF will be saved.
+            fps (int): Frames per second for the GIF. Default is 10.
+        """
+        try:
+            # Load the video file
+            clip = VideoFileClip(input_avi_path)
+            
+            # Write the video as a GIF
+            clip.write_gif(output_gif_path, fps=fps)
+            
+            print(f"GIF saved at: {output_gif_path}")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     import argparse
@@ -83,11 +103,18 @@ if __name__ == "__main__":
     gif_parser.add_argument("source", type=str, help="Path to the GIF file")
     gif_parser.add_argument("output_path", type=str, help="Path to save the MP4 file")
 
+    # Subparser for avi2gif
+    gifavi_parser = subparsers.add_parser("avi2gif", help="Convert a AVI to GIF")
+    gifavi_parser.add_argument("source", type=str, help="Path to the AVI file")
+    gifavi_parser.add_argument("output_path", type=str, help="Path to save the GIF file")
+
     args = parser.parse_args()
 
     if args.command == "extract_frames":
         VideoTools.extract_frames(args.source, args.output_path, args.num_frames)
     elif args.command == "gif2mp4":
         VideoTools.gif2mp4(args.source, args.output_path)
+    elif args.command == "avi2gif":
+        VideoTools.avi2gif(args.source, args.output_path)
     else:
         parser.print_help()
